@@ -500,62 +500,6 @@ class Userforms extends UserAudit
         return $xmlData;
     }
 
-    /**
-    *
-    * @param type $data
-    * @return type
-    */
-    public function getEventLog($data)
-    {
-        global $pid;
-        if (UserService::valid($data[0])=='existingpatient') {
-            $date1 = $data['start_date'];
-            $date2 = $data['end_date'];
-            $keyword = $data['keyword'];
-            $arrBinds = array();
-            $cols = "DISTINCT log.date, event, user, groupname, patient_id, success, comments,checksum,crt_user";
-            $sql = "SELECT $cols, CONCAT(fname, ' ', lname) as patient_ful_name, patient_portal_menu.`menu_name`,
-            patient_portal_menu_group.`menu_group_name`, ccda_doc_id FROM log
-			JOIN patient_data ON log.patient_id = patient_data.pid
-			JOIN patient_access_offsite ON log.patient_id = patient_access_offsite.pid
-			JOIN patient_portal_menu ON patient_portal_menu.`patient_portal_menu_id` = log.menu_item_id
-			JOIN patient_portal_menu_group ON patient_portal_menu_group.`patient_portal_menu_group_id` = patient_portal_menu.`patient_portal_menu_group_id`
-			WHERE log.date >= ? AND log.date <= ?";
-
-            $sql .= " AND log_from = 'patient-portal'";
-            $sql .= " AND patient_id = ?";
-            $arrBinds = array($date1  . ' 00:00:00', $date2 . ' 23:59:59', $pid);
-            if (!empty($keyword)) {
-                $sql .= " AND (log.date LIKE ?
-					  OR LOWER(event) LIKE ?
-					  OR LOWER(user) LIKE ?
-						  OR LOWER(CONCAT(fname, ' ', lname)) LIKE ?
-					  OR LOWER(groupname) LIKE ?
-					  OR LOWER(comments) LIKE ?
-					  OR LOWER(user) LIKE ?
-					  ) ";
-                $arrBinds[] = '%' . $keyword . '%' ;
-                $arrBinds[] = '%' . strtolower($keyword) . '%';
-                $arrBinds[] = '%' . strtolower($keyword) . '%';
-                $arrBinds[] = '%' . strtolower($keyword) . '%';
-                $arrBinds[] = '%' . strtolower($keyword) . '%';
-                $arrBinds[] = '%' . strtolower($keyword) . '%';
-                $arrBinds[] = '%' . strtolower($keyword) . '%';
-            }
-
-            $sql .= "  ORDER BY date DESC LIMIT 5000";
-
-            $res = sqlStatement($sql, $arrBinds);
-            $all = array();
-            for ($iter=0; $row=sqlFetchArray($res); $iter++) {
-                $all[$iter] = $row;
-            }
-
-            $responseString = $this->arrayToXml($all);
-
-            return $responseString;
-        }
-    }
 
     /*
      * Connect to a phiMail Direct Messaging server and transmit
